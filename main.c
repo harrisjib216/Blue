@@ -35,7 +35,7 @@ int main(int argc, const char *argv[])
     writeChunk(&chunk, OP_DIVIDE, 105);
 
     // run negation
-    // writeChunk(&chunk, OP_NEGATE, 105);
+    writeChunk(&chunk, OP_NEGATE, 105);
 
     // write end of func or program
     writeChunk(&chunk, OP_RETURN, 105);
