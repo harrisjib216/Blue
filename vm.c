@@ -1,4 +1,5 @@
 #include "common.h"
+#include "debug.h"
 #include "vm.h"
 
 VM vm;
@@ -26,6 +27,11 @@ static InterpretResult run()
     // if there are bytecode instructions to run
     for (;;)
     {
+
+// print instruction if in debug
+#ifdef DEBUG_TRACE_EXECUTION
+        disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
+#endif
 
         uint8_t instruction;
 
