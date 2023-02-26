@@ -73,6 +73,13 @@ static InterpretResult run()
             push(constant);
             break;
         }
+        case OP_NEGATE:
+        {
+            // just push a negative version
+            // of that value
+            push(-pop());
+            break;
+        }
         case OP_RETURN:
         {
             // end of func or program
