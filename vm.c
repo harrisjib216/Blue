@@ -47,6 +47,17 @@ static InterpretResult run()
 // get literal value
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 
+// binary ops: the only change is the operand; the do-while lets
+// us define statements in the same scope without appending a
+// semicolon for the actual macro call
+#define BINARY_OP(op)     \
+    do                    \
+    {                     \
+        double b = pop(); \
+        double a = pop(); \
+        push(a op b);     \
+    } while (false)
+
     // check which instruction to execute
     // if there are bytecode instructions to run
     for (;;)
@@ -73,10 +84,33 @@ static InterpretResult run()
             push(constant);
             break;
         }
+        // addition
+        case OP_ADD:
+        {
+            BINARY_OP(+);
+            break;
+        }
+        // subtraction
+        case OP_SUBTRACT:
+        {
+            BINARY_OP(-);
+            break;
+        }
+        // multiplication
+        case OP_MULTIPLY:
+        {
+            BINARY_OP(*);
+            break;
+        }
+        // divison
+        case OP_DIVIDE:
+        {
+            BINARY_OP(/);
+            break;
+        }
         case OP_NEGATE:
         {
-            // just push a negative version
-            // of that value
+            // just push a negative version of that value
             push(-pop());
             break;
         }
@@ -91,6 +125,7 @@ static InterpretResult run()
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef BINARY_OP
 }
 
 // run bytecode interpreter
