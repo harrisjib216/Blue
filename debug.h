@@ -10,4 +10,7 @@ void disassembleChunk(Chunk *chunk, const char *name);
 // print singular instruction
 int disassembleInstruction(Chunk *chunk, int offset);
 
+// print contents of stack
+void printStack(Value *stack, Value *top);
+
 #endif

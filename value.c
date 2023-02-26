@@ -33,8 +33,14 @@ void freeValueArray(ValueArray *array)
     initValueArray(array);
 }
 
-// print literal value
+// print value
 void printValue(Value value)
+{
+    printf("%g", value);
+}
+
+// print literal value
+void printlnValue(Value value)
 {
     printf("%g\n", value);
 }

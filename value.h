@@ -28,7 +28,10 @@ void writeArrayValue(ValueArray *array, Value value);
 // delete items
 void freeValueArray(ValueArray *array);
 
-// print value
+// void print value
 void printValue(Value value);
+
+// print value with newline
+void printlnValue(Value value);
 
 #endif

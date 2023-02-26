@@ -26,7 +26,7 @@ static int constantInstruction(const char *name, Chunk *chunk, int offset)
 {
     uint8_t constant = chunk->code[offset + 1];
     printf("%-16s %4d: ", name, constant);
-    printValue(chunk->constants.values[constant]);
+    printlnValue(chunk->constants.values[constant]);
     return offset + 2;
 }
 
@@ -55,4 +55,17 @@ int disassembleInstruction(Chunk *chunk, int offset)
         printf("Unknown opcode %d\n", instruction);
         return offset + 1;
     }
+}
+
+// print contents of stack
+void printStack(Value *stack, Value *top)
+{
+    printf(" ");
+
+    for (Value *slot = stack; slot < top; slot++)
+    {
+        printf("[ %g ]", *slot);
+    }
+
+    printf("\n");
 }

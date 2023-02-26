@@ -4,14 +4,38 @@
 
 VM vm;
 
+// config: point stackTop to the beginning
+static void resetStack()
+{
+    vm.stackTop = vm.stack;
+}
+
 // set up vm
 void initVM()
 {
+    resetStack();
 }
 
 // clear vm
 void freeVM()
 {
+}
+
+// append value
+void push(Value value)
+{
+    *vm.stackTop = value;
+    vm.stackTop++;
+}
+
+// remove element
+Value pop()
+{
+    // since stackTop points to the next available item
+    // we don't need to remove this value
+    // we label it as available by pointing to it
+    vm.stackTop--;
+    return *vm.stackTop;
 }
 
 // START OF THE RUN PROGRAM
@@ -30,6 +54,10 @@ static InterpretResult run()
 
 // print instruction if in debug
 #ifdef DEBUG_TRACE_EXECUTION
+        // print stack values
+        printStack(vm.stack, vm.stackTop);
+
+        // print instruction with data
         disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
 #endif
 
@@ -40,13 +68,15 @@ static InterpretResult run()
         case OP_CONSTANT:
         {
             // print constant vlaue
+            // todo: optimize
             Value constant = READ_CONSTANT();
-            printValue(constant);
+            push(constant);
             break;
         }
         case OP_RETURN:
         {
             // end of func or program
+            printlnValue(pop());
             return INTERPRET_OK;
         }
         }
