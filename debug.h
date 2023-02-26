@@ -4,8 +4,10 @@
 #include "chunk.h"
 #include "debug.h"
 
+// go through a chunk
 void disassembleChunk(Chunk *chunk, const char *name);
 
+// print singular instruction
 int disassembleInstruction(Chunk *chunk, int offset);
 
 #endif

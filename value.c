@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "value.h"
 
+// initialize literal array
 void initValueArray(ValueArray *array)
 {
     array->values = NULL;
@@ -10,6 +11,8 @@ void initValueArray(ValueArray *array)
     array->count = 0;
 }
 
+// write literal/constant value
+// same as writeChunk
 void writeArrayValue(ValueArray *array, Value value)
 {
     if (array->capacity < array->count + 1)
@@ -23,12 +26,14 @@ void writeArrayValue(ValueArray *array, Value value)
     array->count++;
 }
 
+// free literal array
 void freeValueArray(ValueArray *array)
 {
     FREE_ARRAY(Value, array->values, array->capacity);
     initValueArray(array);
 }
 
+// print literal value
 void printValue(Value value)
 {
     printf("%g\n", value);

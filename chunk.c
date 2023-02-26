@@ -4,6 +4,7 @@
 #include "memory.h"
 #include "value.h"
 
+// make chunk of code
 void initChunk(Chunk *chunk)
 {
     chunk->count = 0;
@@ -13,6 +14,7 @@ void initChunk(Chunk *chunk)
     initValueArray(&chunk->constants);
 }
 
+// empty chunk of code
 void freeChunk(Chunk *chunk)
 {
     FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
@@ -21,8 +23,10 @@ void freeChunk(Chunk *chunk)
     initChunk(chunk);
 }
 
+// add code to chunk
 void writeChunk(Chunk *chunk, uint8_t byte, int line)
 {
+    // grow array if not enough space
     if (chunk->capacity < chunk->count + 1)
     {
         int oldCapacity = chunk->capacity;
@@ -31,11 +35,13 @@ void writeChunk(Chunk *chunk, uint8_t byte, int line)
         chunk->lines = GROW_ARRAY(int, chunk->lines, oldCapacity, chunk->capacity);
     }
 
+    // append bytecode, lines, and increment count
     chunk->code[chunk->count] = byte;
     chunk->lines[chunk->count] = line;
     chunk->count++;
 }
 
+// add literal value to constants array
 int addConstant(Chunk *chunk, Value value)
 {
     writeArrayValue(&chunk->constants, value);

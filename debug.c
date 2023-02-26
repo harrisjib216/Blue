@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "value.h"
 
+// go through bytecode array in chunk
 void disassembleChunk(Chunk *chunk, const char *name)
 {
     printf("__ %s __\n", name);
@@ -13,12 +14,14 @@ void disassembleChunk(Chunk *chunk, const char *name)
     }
 }
 
+// print an instruction
 static int simpleInstruction(const char *name, int offset)
 {
     printf("%s\n", name);
     return offset + 1;
 }
 
+// print literal value and name of instruction
 static int constantInstruction(const char *name, Chunk *chunk, int offset)
 {
     uint8_t constant = chunk->code[offset + 1];
@@ -27,13 +30,14 @@ static int constantInstruction(const char *name, Chunk *chunk, int offset)
     return offset + 2;
 }
 
+// print each instruction from bytecode
 int disassembleInstruction(Chunk *chunk, int offset)
 {
     printf("%04d ", offset);
 
     if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1])
     {
-        printf("    |   ");
+        printf("   |   ");
     }
     else
     {
