@@ -76,6 +76,7 @@ static InterpretResult run()
 
         switch (instruction = READ_BYTE())
         {
+        // literal values
         case OP_CONSTANT:
         {
             // print constant vlaue
@@ -84,39 +85,38 @@ static InterpretResult run()
             push(constant);
             break;
         }
-        // addition
+        // binary ops, arithametic
         case OP_ADD:
         {
             BINARY_OP(+);
             break;
         }
-        // subtraction
         case OP_SUBTRACT:
         {
             BINARY_OP(-);
             break;
         }
-        // multiplication
         case OP_MULTIPLY:
         {
             BINARY_OP(*);
             break;
         }
-        // divison
         case OP_DIVIDE:
         {
             BINARY_OP(/);
             break;
         }
+        // urnary ops
         case OP_NEGATE:
         {
             // just push a negative version of that value
+            // todo: just convert the number to negative
             push(-pop());
             break;
         }
+        // eof, program, function
         case OP_RETURN:
         {
-            // end of func or program
             printlnValue(pop());
             return INTERPRET_OK;
         }
