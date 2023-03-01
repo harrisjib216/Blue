@@ -1,54 +1,91 @@
-#include "common.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "common.h"
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
 
-int main(int argc, const char *argv[])
+static void repl()
+{
+    // make repl length 1024
+    char line[1024];
+
+    // interpret each line until user quits
+    for (;;)
+    {
+        printf("> ");
+
+        if (!fgets(line, sizeof(line), stdin))
+        {
+            printf("\n");
+            break;
+        }
+
+        interpret(line);
+    }
+}
+
+static char *readFile(const char *path)
+{
+    // open file
+    FILE *file = fopen(path, "rb");
+
+    // move pointer to the end to get length of file
+    fseek(file, 0L, SEEK_END);
+    size_t fileSize = ftell(file);
+    rewind(file);
+
+    // copy contents of file into heap, append EOF character
+    char *buffer = (char *)malloc(fileSize + 1);
+    size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
+    buffer[bytesRead] = '\0';
+
+    // close and pass file
+    fclose(file);
+    return buffer;
+}
+
+static void runFile(const char *path)
+{
+    // dynamically allocates and passes ownership
+    char *file = readFile(path);
+
+    // convert to byte code
+    InterpretResult result = interpret(file);
+
+    // clear file since we have our program
+    free(file);
+
+    // exit if errors
+    if (result == INTERPRET_COMPILE_ERROR)
+        exit(65);
+    if (result == INTERPRET_RUNTIME_ERROR)
+        exit(70);
+}
+
+int main(int argCount, const char *args[])
 {
     // initialize vm
     initVM();
 
-    // make chunk of code
-    Chunk chunk;
-    initChunk(&chunk);
-
-    // write number to constants
-    int constant = addConstant(&chunk, 1.2);
-    writeChunk(&chunk, OP_CONSTANT, 105);
-    writeChunk(&chunk, constant, 105);
-
-    // write another number
-    constant = addConstant(&chunk, 3.5);
-    writeChunk(&chunk, OP_CONSTANT, 105);
-    writeChunk(&chunk, constant, 105);
-
-    // write addition operation
-    writeChunk(&chunk, OP_ADD, 105);
-
-    // write another number
-    constant = addConstant(&chunk, 5.7);
-    writeChunk(&chunk, OP_CONSTANT, 105);
-    writeChunk(&chunk, constant, 105);
-
-    // write addition operation
-    writeChunk(&chunk, OP_DIVIDE, 105);
-
-    // run negation
-    writeChunk(&chunk, OP_NEGATE, 105);
-
-    // write end of func or program
-    writeChunk(&chunk, OP_RETURN, 105);
-
-    // todo: remove
-    disassembleChunk(&chunk, "test chunk");
-
-    // read code
-    interpret(&chunk);
+    if (argCount == 1)
+    {
+        repl();
+    }
+    else if (argCount == 2)
+    {
+        runFile(args[1]);
+    }
+    else
+    {
+        fprintf(stderr, "Usage: blue [file path]\n");
+        exit(64);
+    }
 
     // free vm and code
     freeVM();
-    freeChunk(&chunk);
 
     return 0;
 }
