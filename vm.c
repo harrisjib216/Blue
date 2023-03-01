@@ -1,4 +1,5 @@
 #include "common.h"
+#include "compiler.h"
 #include "debug.h"
 #include "vm.h"
 
@@ -128,15 +129,9 @@ static InterpretResult run()
 #undef BINARY_OP
 }
 
-// run bytecode interpreter
-InterpretResult interpret(Chunk *chunk)
+// compile source to byte code
+InterpretResult interpret(const char *source)
 {
-    // assign code chunk
-    vm.chunk = chunk;
-
-    // set pointer
-    vm.ip = vm.chunk->code;
-
-    // begin executing
-    return run();
+    compile(source);
+    return INTERPRET_OK;
 }

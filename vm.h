@@ -37,7 +37,7 @@ void initVM();
 void freeVM();
 
 // interpret code
-InterpretResult interpret(Chunk *chunk);
+InterpretResult interpret(const char *source);
 
 // append value
 void push(Value value);
