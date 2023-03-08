@@ -4,6 +4,7 @@
         "__split_buffer": "cpp",
         "string": "cpp",
         "vector": "cpp",
-        "debug.h": "c"
+        "debug.h": "c",
+        "cstdlib": "c"
     }
 }

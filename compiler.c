@@ -15,6 +15,14 @@ typedef struct
 
 Parser parser;
 
+Chunk *compilingChunk;
+
+// get chunk we are compiling
+static Chunk *currentChunk()
+{
+    return compilingChunk;
+}
+
 // print where the error occurred and its message
 static void errorAt(Token *token, const char *message)
 {
@@ -90,11 +98,52 @@ static void consume(TokenType type, const char *message)
     errorAtCurrent(message);
 }
 
+// translate parsed code to bytecode
+static void emitByte(uint8_t byte)
+{
+    writeChunk(currentChunk(), byte, parser.previous.line);
+}
+
+// write opcode with one byte operand
+static void emitBytes(uint8_t byte1, uint8_t byte2)
+{
+    emitByte(byte1);
+    emitByte(byte2);
+}
+
+// temporary: print expression value
+static void emitReturn()
+{
+    emitByte(OP_RETURN);
+}
+
+// finish compiler instructions?
+static void endCompiler()
+{
+    emitReturn();
+}
+
+// convert string token to number
+// todo: fix whacky stuff i did with numbers
+static void number()
+{
+    double value = strtod(parser.previous.start, NULL);
+    emitConstant(value);
+}
+
+//
+static void expression()
+{
+}
+
 // compilation was successful if no error appeared
 bool compile(const char *source, Chunk *chunk)
 {
     // make a scanner to generate tokens from code
     initScanner(source);
+
+    // init chunk to compile
+    compilingChunk = chunk;
 
     // initialize parser errors to false
     parser.hadError = false;
@@ -108,6 +157,9 @@ bool compile(const char *source, Chunk *chunk)
 
     // make sure we reach eof
     consume(TOKEN_EOF, "Expected end of expression");
+
+    // finished compiling chunk
+    endCompiler();
 
     return !parser.hadError;
 }
