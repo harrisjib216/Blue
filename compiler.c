@@ -117,10 +117,38 @@ static void emitReturn()
     emitByte(OP_RETURN);
 }
 
+// add literal and type cast index
+static uint8_t makeConstant(Value value)
+{
+    int constant = addConstant(currentChunk(), value);
+
+    // ensure we don't exceed more than 256 constants
+    if (constant > UINT8_MAX)
+    {
+        error("Too many literals in one chunk.");
+        return 0;
+    }
+
+    return (uint8_t)constant;
+}
+
+// append byte instruction of literal value
+static void emitConstant(Value value)
+{
+    emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
 // finish compiler instructions?
 static void endCompiler()
 {
     emitReturn();
+}
+
+// handle expressions in parenthesis
+static void grouping()
+{
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expecting ')' after expression.");
 }
 
 // convert string token to number

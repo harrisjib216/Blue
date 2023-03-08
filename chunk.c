@@ -41,7 +41,7 @@ void writeChunk(Chunk *chunk, uint8_t byte, int line)
     chunk->count++;
 }
 
-// add literal value to constants array
+// add literal value to constants array, returns its index
 int addConstant(Chunk *chunk, Value value)
 {
     writeArrayValue(&chunk->constants, value);
