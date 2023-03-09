@@ -30,7 +30,7 @@ static bool isDigit(char c)
 // could be a character
 static bool isAlpha(char c)
 {
-    return (c >= 'a' || c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
 // is at end
@@ -138,6 +138,7 @@ static TokenType checkKeyword(int start, int length, const char *rest, TokenType
 // return if token is ours or not
 static TokenType indentifierType()
 {
+    // todo: here?
     bool isNotOneChar = scanner.current - scanner.start > 1;
 
     switch (scanner.start[0])
@@ -190,6 +191,7 @@ static TokenType indentifierType()
     case 'w':
         return checkKeyword(1, 4, "hile", TOKEN_WHILE);
     }
+
     return TOKEN_IDENTIFIER;
 }
 

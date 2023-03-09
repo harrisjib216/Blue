@@ -18,6 +18,7 @@ void initVM()
 }
 
 // clear vm
+// todo: finish function
 void freeVM()
 {
 }
