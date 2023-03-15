@@ -36,11 +36,25 @@ void freeValueArray(ValueArray *array)
 // print value
 void printValue(Value value)
 {
-    printf("%g", value);
+    switch (value.type)
+    {
+    case VAL_BOOL:
+        printf(AS_BOOL(value) ? "true" : "false");
+        break;
+    case VAL_NIL:
+        printf("nil");
+        break;
+    case VAL_NUMBER:
+        printf("%g", AS_NUMBER(value));
+        break;
+    default:
+        break;
+    }
 }
 
-// print literal value
+// print value with new line
 void printlnValue(Value value)
 {
-    printf("%g\n", value);
+    printValue(value);
+    printf("\n");
 }

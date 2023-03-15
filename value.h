@@ -3,10 +3,39 @@
 
 #include "common.h"
 
-// define value type
-typedef double Value;
+typedef enum
+{
+    VAL_BOOL,
+    VAL_NIL,
+    VAL_NUMBER,
+} ValueType;
 
-//
+// union to store data in same location, pg 526
+typedef struct
+{
+    ValueType type;
+    union
+    {
+        bool boolean;
+        double number;
+    } as;
+} Value;
+
+// checking type before using AS_ macros
+#define IS_BOOL(data) ((data).type == VAL_BOOL)
+#define IS_NIL(data) ((data).type == VAL_NIL)
+#define IS_NUMBER(data) ((data).type == VAL_NUMBER)
+
+// unpack struct for C value; nil carries no extra data to rep nil
+#define AS_BOOL(data) ((data).as.boolean)
+#define AS_NUMBER(data) ((data).as.number)
+
+// macros to mask C values into our struct
+#define BOOL_VAL(data) ((Value){VAL_BOOL, {.boolean = data}})
+#define NIL_VAL ((Value){VAL_NIL, {.number = 0}})
+#define NUMBER_VAL(data) ((Value){VAL_NUMBER, {.number = data}})
+
+// array of literal values
 typedef struct
 {
     // size of value array
