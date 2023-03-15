@@ -15,8 +15,15 @@ static void resetStack()
 }
 
 // todo: document
+static Value peek2(int distance)
+{
+    return vm.stack[-1 - distance];
+}
+
 static void runtimeError(const char *format, ...)
 {
+    printf("%d %d\n", peek2(0).as.number, peek2(1).as.number);
+
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -64,6 +71,12 @@ Value pop()
 static Value peek(int distance)
 {
     return vm.stack[-1 - distance];
+}
+
+// todo: define what our language considers falsey
+static bool isFalsey(Value value)
+{
+    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
 // START OF THE RUN PROGRAM
@@ -136,6 +149,24 @@ static InterpretResult run()
             push(BOOL_VAL(false));
             break;
         }
+        // logical, comparison
+        case OP_EQUAL:
+        {
+            Value b = pop();
+            Value a = pop();
+            push(BOOL_VAL(valuesEquate(a, b)));
+            break;
+        }
+        case OP_GREATER:
+        {
+            BINARY_OP(BOOL_VAL, >);
+            break;
+        }
+        case OP_LESS:
+        {
+            BINARY_OP(BOOL_VAL, <);
+            break;
+        }
         // binary ops, arithametic
         case OP_ADD:
         {
@@ -158,6 +189,11 @@ static InterpretResult run()
             break;
         }
         // urnary ops
+        case OP_NOT:
+        {
+            push(BOOL_VAL(isFalsey(pop())));
+            break;
+        }
         case OP_NEGATE:
         {
 

@@ -58,3 +58,27 @@ void printlnValue(Value value)
     printValue(value);
     printf("\n");
 }
+
+// return if both values equate
+bool valuesEquate(Value a, Value b)
+{
+    // mismatched types
+    if (a.type != b.type)
+        return false;
+
+    switch (a.type)
+    {
+    case VAL_NIL:
+        // both are nil
+        return true;
+    case VAL_BOOL:
+        // both are bools
+        return AS_BOOL(a) == AS_BOOL(b);
+    case VAL_NUMBER:
+        // both are numbers
+        return AS_NUMBER(a) == AS_NUMBER(b);
+    default:
+        // unreachable
+        return false;
+    }
+}

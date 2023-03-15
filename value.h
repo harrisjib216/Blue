@@ -48,6 +48,9 @@ typedef struct
     Value *values;
 } ValueArray;
 
+// returns a C bool for the users code to see
+bool valuesEquate(Value a, Value b);
+
 // create or clear array
 void initValueArray(ValueArray *array);
 
