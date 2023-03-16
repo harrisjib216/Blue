@@ -82,13 +82,15 @@ int disassembleInstruction(Chunk *chunk, int offset)
 }
 
 // print contents of stack
-void printStack(Value *stack, Value *top)
+void printStack(Value stack[], Value *stackTop)
 {
-    printf(" ");
+    printf("\t\t");
 
-    for (Value *slot = stack; slot < top; slot++)
+    for (Value *slot = stack; slot < stackTop; slot++)
     {
-        printf("[ %g ]", *slot);
+        printf("[ ");
+        printValue(*slot);
+        printf(" ]");
     }
 
     printf("\n");

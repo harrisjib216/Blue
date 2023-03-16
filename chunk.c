@@ -2,7 +2,6 @@
 
 #include "chunk.h"
 #include "memory.h"
-#include "value.h"
 
 // make chunk of code
 void initChunk(Chunk *chunk)

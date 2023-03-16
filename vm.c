@@ -15,15 +15,8 @@ static void resetStack()
 }
 
 // todo: document
-static Value peek2(int distance)
-{
-    return vm.stack[-1 - distance];
-}
-
 static void runtimeError(const char *format, ...)
 {
-    printf("%d %d\n", peek2(0).as.number, peek2(1).as.number);
-
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);

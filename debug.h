@@ -11,6 +11,6 @@ void disassembleChunk(Chunk *chunk, const char *name);
 int disassembleInstruction(Chunk *chunk, int offset);
 
 // print contents of stack
-void printStack(Value *stack, Value *top);
+void printStack(Value stack[], Value *stackTop);
 
 #endif
