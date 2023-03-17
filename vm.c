@@ -63,7 +63,7 @@ Value pop()
 // return element in stack
 static Value peek(int distance)
 {
-    return vm.stack[-1 - distance];
+    return vm.stackTop[-1 - distance];
 }
 
 // todo: define what our language considers falsey

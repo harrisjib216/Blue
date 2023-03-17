@@ -30,7 +30,7 @@ typedef enum
     TOKEN_ELSE,
     TOKEN_FALSE,
     TOKEN_FOR,
-    TOKEN_FUN,
+    TOKEN_FUNC,
     TOKEN_IF,
     TOKEN_NIL,
     TOKEN_OR,

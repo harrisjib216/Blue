@@ -117,6 +117,7 @@ static void skipWhitespace()
                 // exit so scanToken can assess it
                 return;
             }
+            break;
         default:
             return;
         }
@@ -136,7 +137,7 @@ static TokenType checkKeyword(int start, int length, const char *rest, TokenType
 }
 
 // return if token is ours or not
-static TokenType indentifierType()
+static TokenType identifierType()
 {
     // todo: here?
     bool isNotOneChar = scanner.current - scanner.start > 1;
@@ -159,7 +160,7 @@ static TokenType indentifierType()
             case 'o':
                 return checkKeyword(2, 1, "r", TOKEN_FOR);
             case 'u':
-                return checkKeyword(2, 2, "nc", TOKEN_FALSE);
+                return checkKeyword(2, 2, "nc", TOKEN_FUNC);
             }
         }
         break;
@@ -186,6 +187,7 @@ static TokenType indentifierType()
                 return checkKeyword(2, 2, "ue", TOKEN_TRUE);
             }
         }
+        break;
     case 'v':
         return checkKeyword(1, 2, "ar", TOKEN_VAR);
     case 'w':
@@ -201,7 +203,7 @@ static Token identifier()
     while (isAlpha(peek()) || isDigit(peek()))
         advance();
 
-    return makeToken(indentifierType());
+    return makeToken(identifierType());
 }
 
 // string literals
