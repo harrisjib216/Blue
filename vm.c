@@ -189,7 +189,6 @@ static InterpretResult run()
         }
         case OP_NEGATE:
         {
-
             // fail if not a number
             if (!IS_NUMBER(peek(0)))
             {
