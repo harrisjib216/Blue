@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "memory.h"
+#include "vm.h"
 
 // return reallocated heap space
 void *reallocate(void *pointer, size_t oldSize, size_t newSize)
@@ -20,4 +21,32 @@ void *reallocate(void *pointer, size_t oldSize, size_t newSize)
         exit(1);
 
     return result;
+}
+
+//
+static void freeObject(Obj *object)
+{
+    switch (object->type)
+    {
+    case OBJ_STRING:
+    {
+        ObjString *string = (ObjString *)object;
+        FREE_ARRAY(char, string->chars, string->length + 1);
+        FREE(ObjString, object);
+        break;
+    }
+    }
+}
+
+// frees all objects in the vm
+void freeObjects()
+{
+    Obj *curr = vm.objects;
+
+    while (curr != NULL)
+    {
+        Obj *next = curr->next;
+        freeObject(curr);
+        curr = next;
+    }
 }

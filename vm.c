@@ -44,6 +44,7 @@ void initVM()
 // todo: finish function
 void freeVM()
 {
+    freeObjects();
 }
 
 // append value

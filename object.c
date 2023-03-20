@@ -12,8 +12,15 @@
 // make space for any object type
 static Obj *allocateObject(size_t size, ObjType type)
 {
+    // allocate
     Obj *object = (Obj *)reallocate(NULL, 0, size);
     object->type = type;
+
+    // insert object at the head,
+    // the linked list is essentially in reverse
+    object->next = vm.objects;
+    vm.objects = object;
+
     return object;
 }
 

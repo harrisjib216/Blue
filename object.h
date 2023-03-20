@@ -22,6 +22,9 @@ typedef enum
 struct Obj
 {
     ObjType type;
+
+    // linked list node of all objects
+    struct Obj *next;
 };
 
 // extends obj and adds string properties

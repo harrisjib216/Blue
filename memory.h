@@ -2,10 +2,14 @@
 #define blue_memory_h
 
 #include "common.h"
+#include "object.h"
 
 // create new heap array
 #define ALLOCATE(type, length) \
     (type *)reallocate(NULL, 0, sizeof(type) * (length))
+
+// resize an allocation to zero bytes
+#define FREE(type, pointer) reallocate(pointer, sizeof(type), 0);
 
 // default to eight or double heap size
 #define GROW_CAPACITY(capacity) \
@@ -21,5 +25,8 @@
 
 // free, exit, or make space
 void *reallocate(void *pointer, size_t oldSize, size_t newSize);
+
+// frees all objects
+void freeObjects();
 
 #endif

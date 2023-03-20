@@ -21,6 +21,9 @@ typedef struct
     // points to element just past top of stack
     // points to where next new value should go
     Value *stackTop;
+
+    // linked list of all objects
+    Obj *objects;
 } VM;
 
 typedef enum
@@ -29,6 +32,9 @@ typedef enum
     INTERPRET_COMPILE_ERROR,
     INTERPRET_RUNTIME_ERROR,
 } InterpretResult;
+
+// expose vm
+extern VM vm;
 
 // config vm
 void initVM();
