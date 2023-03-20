@@ -3,6 +3,10 @@
 
 #include "common.h"
 
+// create new heap array
+#define ALLOCATE(type, length) \
+    (type *)reallocate(NULL, 0, sizeof(type) * (length))
+
 // default to eight or double heap size
 #define GROW_CAPACITY(capacity) \
     ((capacity) < 8 ? 8 : (capacity)*2)

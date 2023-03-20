@@ -3,11 +3,15 @@
 
 #include "common.h"
 
+typedef struct Obj Obj;
+typedef struct ObjString ObjString;
+
 typedef enum
 {
     VAL_BOOL,
     VAL_NIL,
     VAL_NUMBER,
+    VAL_OBJ,
 } ValueType;
 
 // union to store data in same location, pg 526
@@ -16,24 +20,30 @@ typedef struct
     ValueType type;
     union
     {
+        // stack
         bool boolean;
         double number;
+        // heap
+        Obj *obj;
     } as;
 } Value;
 
 // checking type before using AS_ macros
-#define IS_BOOL(data) ((data).type == VAL_BOOL)
-#define IS_NIL(data) ((data).type == VAL_NIL)
-#define IS_NUMBER(data) ((data).type == VAL_NUMBER)
+#define IS_BOOL(item) ((item).type == VAL_BOOL)
+#define IS_NIL(item) ((item).type == VAL_NIL)
+#define IS_NUMBER(item) ((item).type == VAL_NUMBER)
+#define IS_OBJ(item) ((item).type == VAL_OBJ)
 
 // unpack struct for C value; nil carries no extra data to rep nil
-#define AS_BOOL(data) ((data).as.boolean)
-#define AS_NUMBER(data) ((data).as.number)
+#define AS_BOOL(item) ((item).as.boolean)
+#define AS_NUMBER(item) ((item).as.number)
+#define AS_OBJ(item) ((item).as.obj)
 
 // macros to mask C values into our struct
-#define BOOL_VAL(data) ((Value){VAL_BOOL, {.boolean = data}})
+#define BOOL_VAL(item) ((Value){VAL_BOOL, {.boolean = item}})
 #define NIL_VAL ((Value){VAL_NIL, {.number = 0}})
-#define NUMBER_VAL(data) ((Value){VAL_NUMBER, {.number = data}})
+#define NUMBER_VAL(item) ((Value){VAL_NUMBER, {.number = item}})
+#define OBJ_VAL(item) ((Value){VAL_OBJ, {.obj = (Obj *)item}})
 
 // array of literal values
 typedef struct
