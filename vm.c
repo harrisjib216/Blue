@@ -1,9 +1,12 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
+#include "object.h"
+#include "memory.h"
 #include "vm.h"
 
 VM vm;
@@ -70,6 +73,28 @@ static Value peek(int distance)
 static bool isFalsey(Value value)
 {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+// join strings
+// todo: move this
+static void concatenate()
+{
+    ObjString *b = AS_STRING(pop());
+    ObjString *a = AS_STRING(pop());
+
+    int length = a->length + b->length;
+
+    char *newString = ALLOCATE(char, length + 1);
+
+    // first copy a
+    memcpy(newString, a->chars, a->length);
+
+    // then copy b, a.length away from first space
+    memcpy(newString + a->length, b->chars, b->length);
+    newString[length] = '\0';
+
+    ObjString *result = takeString(newString, length);
+    push(OBJ_VAL(result));
 }
 
 // START OF THE RUN PROGRAM
@@ -163,7 +188,22 @@ static InterpretResult run()
         // binary ops, arithametic
         case OP_ADD:
         {
-            BINARY_OP(NUMBER_VAL, +);
+            if (IS_STRING(peek(0)) && IS_STRING(peek(1)))
+            {
+                concatenate();
+            }
+            else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1)))
+            {
+                // todo: retry this BINARY_OP(NUMBER_VAL, +);
+                double b = AS_NUMBER(pop());
+                double a = AS_NUMBER(pop());
+                push(NUMBER_VAL(a + b));
+            }
+            else
+            {
+                runtimeError("Values must be two strings or numbers.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
             break;
         }
         case OP_SUBTRACT:

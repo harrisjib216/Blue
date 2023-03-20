@@ -5,6 +5,9 @@
         "string": "cpp",
         "vector": "cpp",
         "debug.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "memory.h": "c",
+        "hashtable.h": "c",
+        "hashtable2.h": "c"
     }
 }

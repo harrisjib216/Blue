@@ -32,8 +32,14 @@ struct ObjString
     char *chars;
 };
 
+// passes ownership of string by making a copy
+ObjString *takeString(char *chars, int length);
+
 // clone a string
 ObjString *copyString(const char *chars, int length);
+
+// handle object printing
+void printObject(Value value);
 
 // returns if the value/obj matches a certain ObjType
 static inline bool isObjType(Value value, ObjType type)

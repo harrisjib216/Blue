@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 
+#include "object.h"
 #include "memory.h"
 #include "value.h"
 
@@ -53,6 +55,11 @@ void printValue(Value value)
         printf("%g", AS_NUMBER(value));
         break;
     }
+    case VAL_OBJ:
+    {
+        printObject(value);
+        break;
+    }
     default:
         break;
     }
@@ -83,6 +90,15 @@ bool valuesEquate(Value a, Value b)
     case VAL_NUMBER:
         // both are numbers
         return AS_NUMBER(a) == AS_NUMBER(b);
+    case VAL_OBJ:
+    {
+        // todo: support other objects
+        ObjString *aStr = AS_STRING(a);
+        ObjString *bStr = AS_STRING(b);
+
+        return aStr->length == bStr->length &&
+               memcmp(aStr->chars, bStr->chars, aStr->length) == 0;
+    }
     default:
         // unreachable
         return false;

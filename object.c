@@ -26,6 +26,11 @@ static ObjString *allocateString(char *chars, int length)
     return string;
 }
 
+ObjString *takeString(char *chars, int length)
+{
+    return allocateString(chars, length);
+}
+
 // copy string from source or other location into heap
 ObjString *copyString(const char *chars, int length)
 {
@@ -33,4 +38,15 @@ ObjString *copyString(const char *chars, int length)
     memcpy(heapString, chars, length);
     heapString[length] = '\0';
     return allocateString(heapString, length);
+}
+
+// handle different objects
+void printObject(Value value)
+{
+    switch (OBJ_TYPE(value))
+    {
+    case OBJ_STRING:
+        printf("%s", AS_CSTRING(value));
+        break;
+    }
 }
