@@ -91,14 +91,7 @@ bool valuesEquate(Value a, Value b)
         // both are numbers
         return AS_NUMBER(a) == AS_NUMBER(b);
     case VAL_OBJ:
-    {
-        // todo: support other objects
-        ObjString *aStr = AS_STRING(a);
-        ObjString *bStr = AS_STRING(b);
-
-        return aStr->length == bStr->length &&
-               memcmp(aStr->chars, bStr->chars, aStr->length) == 0;
-    }
+        return AS_OBJ(a) == AS_OBJ(b);
     default:
         // unreachable
         return false;

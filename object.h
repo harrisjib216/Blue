@@ -33,6 +33,7 @@ struct ObjString
     Obj obj;
     int length;
     char *chars;
+    uint32_t hash;
 };
 
 // passes ownership of string by making a copy
@@ -49,5 +50,7 @@ static inline bool isObjType(Value value, ObjType type)
 {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;
 }
+
+// todo: support converting any object into a string
 
 #endif

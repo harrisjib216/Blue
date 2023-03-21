@@ -2,6 +2,7 @@
 #define blue_vm_h
 
 #include "chunk.h"
+#include "table.h"
 #include "value.h"
 
 // length of stack for now
@@ -21,6 +22,9 @@ typedef struct
     // points to element just past top of stack
     // points to where next new value should go
     Value *stackTop;
+
+    // hash of all strings
+    Table strings;
 
     // linked list of all objects
     Obj *objects;

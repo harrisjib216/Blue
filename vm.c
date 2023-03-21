@@ -38,12 +38,15 @@ static void runtimeError(const char *format, ...)
 void initVM()
 {
     resetStack();
+    vm.objects = NULL;
+    initTable(&vm.strings);
 }
 
 // clear vm
 // todo: finish function
 void freeVM()
 {
+    freeTable(&vm.strings);
     freeObjects();
 }
 
