@@ -245,10 +245,15 @@ static InterpretResult run()
             push(NUMBER_VAL(-AS_NUMBER(pop())));
             break;
         }
+        // statements
+        case OP_PRINT:
+        {
+            printlnValue(pop());
+            break;
+        }
         // eof, program, function
         case OP_RETURN:
         {
-            printlnValue(pop());
             return INTERPRET_OK;
         }
         }

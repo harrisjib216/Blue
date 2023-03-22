@@ -127,6 +127,23 @@ static void consume(TokenType type, const char *message)
     errorAtCurrent(message);
 }
 
+// return if current token matches type param
+static bool check(TokenType type)
+{
+    return parser.current.type == type;
+}
+
+// if current token matches type param, consume
+static bool match(TokenType type)
+{
+    if (!check(type))
+        return false;
+
+    advance();
+
+    return true;
+}
+
 // translate parsed code to bytecode
 static void emitByte(uint8_t byte)
 {
@@ -180,8 +197,10 @@ static void endCompiler()
 #endif
 }
 
-// function signatures
+// function signatures for recursive functions
 static void expression();
+static void statement();
+static void declaration();
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -384,6 +403,30 @@ static void expression()
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
+// make op code to print user's values
+static void printStatement()
+{
+    expression();
+    consume(TOKEN_SEMICOLON, "Expected ';'");
+    emitByte(OP_PRINT);
+}
+
+// supports variables or statements
+static void declaration()
+{
+    statement();
+}
+
+// handles: funcs, prints, classes etc
+static void statement()
+{
+    // programmer has a print statement
+    if (match(TOKEN_PRINT))
+    {
+        printStatement();
+    }
+}
+
 // compilation was successful if no error appeared
 bool compile(const char *source, Chunk *chunk)
 {
@@ -397,14 +440,14 @@ bool compile(const char *source, Chunk *chunk)
     parser.hadError = false;
     parser.panicMode = false;
 
-    // prime the pump
+    // scan all tokens for the program
     advance();
 
-    // parse single expression
-    expression();
-
-    // make sure we reach eof
-    consume(TOKEN_EOF, "Expected end of expression");
+    // loop to gather all statements or expressions
+    while (!match(TOKEN_EOF))
+    {
+        declaration();
+    }
 
     // finished compiling chunk
     endCompiler();
