@@ -298,6 +298,7 @@ Token scanToken()
     case '}':
         return makeToken(TOKEN_RIGHT_BRACE);
     case ';':
+        // todo: remove
         return makeToken(TOKEN_SEMICOLON);
     case ',':
         return makeToken(TOKEN_COMMA);

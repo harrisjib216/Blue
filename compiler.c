@@ -56,7 +56,7 @@ static Chunk *currentChunk()
 static void errorAt(Token *token, const char *message)
 {
     // ignore other errors
-    // todo: remove this so all errors can log
+    // todo: remove this so all errors can be logged
     if (parser.panicMode)
         return;
 
@@ -203,6 +203,8 @@ static void statement();
 static void declaration();
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
+// todo: fix, removing this makes a bug
+static uint8_t identifierConstant(Token *name);
 
 // handle value op value expressions
 static void binary()
@@ -296,6 +298,18 @@ static void string()
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
+static void namedVariable(Token name)
+{
+    uint8_t varName = identifierConstant(&name);
+    emitBytes(OP_GET_GLOBAL, varName);
+}
+
+// identify variables
+static void variable()
+{
+    namedVariable(parser.previous);
+}
+
 // prefix expression
 static void unary()
 {
@@ -339,7 +353,7 @@ ParseRule rules[] = {
     [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
-    [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, NULL, PREC_NONE},
@@ -391,6 +405,25 @@ static void parsePrecedence(Precedence precedence)
     }
 }
 
+// add to chunk constant table
+static uint8_t identifierConstant(Token *name)
+{
+    return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
+}
+
+// requires next token to be an identifier
+static uint8_t parseVariable(const char *errorMessage)
+{
+    consume(TOKEN_IDENTIFIER, errorMessage);
+    return identifierConstant(&parser.previous);
+}
+
+// op instruction to store initial value for the snew variable
+static void defineVariable(uint8_t global)
+{
+    emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
 // return rule for function at index
 static ParseRule *getRule(TokenType type)
 {
@@ -403,18 +436,87 @@ static void expression()
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
+// get variable name and value, default to nil if value isn't present
+static void variableDeclaration()
+{
+    uint8_t global = parseVariable("Expected variable name");
+
+    if (match(TOKEN_EQUAL))
+    {
+        expression();
+    }
+    else
+    {
+        emitByte(OP_NIL);
+    }
+
+    // todo: remove
+    // expect var declaration to have semi colon
+    consume(TOKEN_SEMICOLON, "Expected ;");
+
+    defineVariable(global);
+}
+
+// expression followed by semi color
+static void expressionStatement()
+{
+    expression();
+    // todo: remove
+    consume(TOKEN_SEMICOLON, "Expected ';'");
+    emitByte(OP_POP);
+}
+
 // make op code to print user's values
 static void printStatement()
 {
     expression();
+    // todo: remove
     consume(TOKEN_SEMICOLON, "Expected ';'");
     emitByte(OP_PRINT);
+}
+
+static void synchronize()
+{
+    // todo: remove
+    parser.panicMode = false;
+    while (parser.current.type != TOKEN_EOF)
+    {
+        if (parser.previous.type == TOKEN_SEMICOLON)
+            return;
+
+        switch (parser.current.type)
+        {
+        case TOKEN_CLASS:
+        case TOKEN_FUNC:
+        case TOKEN_VAR:
+        case TOKEN_FOR:
+        case TOKEN_IF:
+        case TOKEN_WHILE:
+        case TOKEN_PRINT:
+        case TOKEN_RETURN:
+            // these items begin new statements
+            return;
+        default:; // nothing for now
+        }
+
+        advance();
+    }
 }
 
 // supports variables or statements
 static void declaration()
 {
-    statement();
+    if (match(TOKEN_VAR))
+    {
+        variableDeclaration();
+    }
+    else
+    {
+        statement();
+    }
+
+    if (parser.panicMode)
+        synchronize();
 }
 
 // handles: funcs, prints, classes etc
@@ -424,6 +526,10 @@ static void statement()
     if (match(TOKEN_PRINT))
     {
         printStatement();
+    }
+    else
+    {
+        expressionStatement();
     }
 }
 

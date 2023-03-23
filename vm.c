@@ -39,6 +39,7 @@ void initVM()
 {
     resetStack();
     vm.objects = NULL;
+    initTable(&vm.globals);
     initTable(&vm.strings);
 }
 
@@ -46,6 +47,7 @@ void initVM()
 // todo: finish function
 void freeVM()
 {
+    freeTable(&vm.globals);
     freeTable(&vm.strings);
     freeObjects();
 }
@@ -110,6 +112,9 @@ static InterpretResult run()
 // get literal value
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 
+// get string value
+#define READ_STRING() AS_STRING(READ_CONSTANT())
+
 // binary ops: the only change is the operand; the do-while lets
 // us define statements in the same scope without appending a
 // semicolon for the actual macro call (refactor to find the error yourself).
@@ -169,6 +174,33 @@ static InterpretResult run()
         case OP_FALSE:
         {
             push(BOOL_VAL(false));
+            break;
+        }
+        // instruction, forgets a value from the stack
+        case OP_POP:
+        {
+            pop();
+            break;
+        }
+        case OP_GET_GLOBAL:
+        {
+            ObjString *name = READ_STRING();
+
+            Value value;
+            if (!tableGet(&vm.globals, name, &value))
+            {
+                runtimeError("Undefied variable: %s", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+
+            push(value);
+            break;
+        }
+        case OP_DEFINE_GLOBAL:
+        {
+            ObjString *varName = READ_STRING();
+            tableSet(&vm.globals, varName, peek(0));
+            pop();
             break;
         }
         // logical, comparison
@@ -261,6 +293,7 @@ static InterpretResult run()
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef BINARY_OP
 }
 

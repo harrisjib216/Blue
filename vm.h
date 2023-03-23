@@ -23,6 +23,9 @@ typedef struct
     // points to where next new value should go
     Value *stackTop;
 
+    // global variables
+    Table globals;
+
     // hash of all strings
     Table strings;
 
