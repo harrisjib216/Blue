@@ -32,7 +32,7 @@ typedef enum
     PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)();
+typedef void (*ParseFn)(bool canAssign);
 
 typedef struct
 {
@@ -207,7 +207,7 @@ static void parsePrecedence(Precedence precedence);
 static uint8_t identifierConstant(Token *name);
 
 // handle value op value expressions
-static void binary()
+static void binary(bool canAssign)
 {
     TokenType operatorType = parser.previous.type;
     ParseRule *rule = getRule(operatorType);
@@ -252,7 +252,7 @@ static void binary()
 }
 
 // handle nil and boolean keywords in pratt parser table
-static void literal()
+static void literal(bool canAssign)
 {
     switch (parser.previous.type)
     {
@@ -277,7 +277,7 @@ static void literal()
 }
 
 // handle expressions in parenthesis
-static void grouping()
+static void grouping(bool canAssign)
 {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expecting ')' after expression.");
@@ -285,33 +285,42 @@ static void grouping()
 
 // convert string token to number
 // todo: fix whacky stuff i did with numbers
-static void number()
+static void number(bool canAssign)
 {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
 
 // define constant of string from source
-static void string()
+static void string(bool canAssign)
 {
     // the +1 and -2 trim the quotation marks
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-static void namedVariable(Token name)
+static void namedVariable(Token name, bool canAssign)
 {
     uint8_t varName = identifierConstant(&name);
-    emitBytes(OP_GET_GLOBAL, varName);
+
+    if (canAssign && match(TOKEN_EQUAL))
+    {
+        expression();
+        emitBytes(OP_SET_GLOBAL, varName);
+    }
+    else
+    {
+        emitBytes(OP_GET_GLOBAL, varName);
+    }
 }
 
 // identify variables
-static void variable()
+static void variable(bool canAssign)
 {
-    namedVariable(parser.previous);
+    namedVariable(parser.previous, canAssign);
 }
 
 // prefix expression
-static void unary()
+static void unary(bool canAssign)
 {
     TokenType operatorType = parser.previous.type;
 
@@ -393,15 +402,21 @@ static void parsePrecedence(Precedence precedence)
     }
 
     // compiles rest of prefix expression
-    prefixRule();
+    bool canAssign = precedence <= PREC_ASSIGNMENT;
+    prefixRule(canAssign);
 
     while (precedence <= getRule(parser.current.type)->precedence)
     {
         advance();
 
         ParseFn infixRule = getRule(parser.previous.type)->infix;
+        infixRule(canAssign);
+    }
 
-        infixRule();
+    // report an error if equal token is not consumed
+    if (canAssign && match(TOKEN_EQUAL))
+    {
+        error("Invalid assignment target");
     }
 }
 

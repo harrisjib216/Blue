@@ -47,6 +47,8 @@ static ObjString *allocateString(char *chars, int length, uint32_t hash)
     string->length = length;
     string->chars = chars;
     string->hash = hash;
+
+    // todo: stop compiler from continuosly setting variable
     tableSet(&vm.strings, string, NIL_VAL);
     return string;
 }
