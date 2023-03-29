@@ -42,8 +42,21 @@ typedef struct
     Precedence precedence;
 } ParseRule;
 
-Parser parser;
+typedef struct
+{
+    Token variable;
+    int depth;
+} Local;
 
+typedef struct
+{
+    Local locals[UINT8_COUNT];
+    int localCount;
+    int scopeDepth;
+} Compiler;
+
+Parser parser;
+Compiler *current = NULL;
 Chunk *compilingChunk;
 
 // get chunk we are compiling
@@ -184,6 +197,14 @@ static void emitConstant(Value value)
     emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
+// todo: document
+static void initCompiler(Compiler *compiler)
+{
+    compiler->localCount = 0;
+    compiler->scopeDepth = 0;
+    current = compiler;
+}
+
 // finish compiler instructions?
 static void endCompiler()
 {
@@ -298,9 +319,9 @@ static void string(bool canAssign)
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-static void namedVariable(Token name, bool canAssign)
+static void namedVariable(Token variable, bool canAssign)
 {
-    uint8_t varName = identifierConstant(&name);
+    uint8_t varName = identifierConstant(&variable);
 
     if (canAssign && match(TOKEN_EQUAL))
     {
@@ -553,6 +574,10 @@ bool compile(const char *source, Chunk *chunk)
 {
     // make a scanner to generate tokens from code
     initScanner(source);
+
+    // todo: document
+    Compiler compiler;
+    initCompiler(&compiler);
 
     // init chunk to compile
     compilingChunk = chunk;
