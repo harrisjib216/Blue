@@ -205,7 +205,7 @@ static void initCompiler(Compiler *compiler)
     current = compiler;
 }
 
-// finish compiler instructions?
+// add return and debug
 static void endCompiler()
 {
     emitReturn();
@@ -216,6 +216,18 @@ static void endCompiler()
         disassembleChunk(currentChunk(), "code");
     }
 #endif
+}
+
+// one level deeper
+static void beginScope()
+{
+    current->scopeDepth++;
+}
+
+// one level shallower
+stati void endScope()
+{
+    current->scopeDepth--;
 }
 
 // function signatures for recursive functions
@@ -472,6 +484,17 @@ static void expression()
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
+// consume delcarations and statements in current block
+static void block()
+{
+    while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF))
+    {
+        declaration();
+    }
+
+    consume(TOKEN_RIGHT_BRACE, "Expected closing brace: }");
+}
+
 // get variable name and value, default to nil if value isn't present
 static void variableDeclaration()
 {
@@ -562,6 +585,12 @@ static void statement()
     if (match(TOKEN_PRINT))
     {
         printStatement();
+    }
+    else if (match(TOKEN_LEFT_BRACE))
+    {
+        beginScope();
+        block();
+        endScope();
     }
     else
     {
