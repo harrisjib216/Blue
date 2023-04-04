@@ -182,6 +182,19 @@ static InterpretResult run()
             pop();
             break;
         }
+        case OP_GET_LOCAL:
+        {
+            // push local value to give O(1) read time
+            uint8_t slot = READ_BYTE();
+            push(vm.stack[slot]);
+            break;
+        }
+        case OP_SET_LOCAL:
+        {
+            uint8_t slot = READ_BYTE();
+            vm.stack[slot] = peek(0);
+            break;
+        }
         case OP_GET_GLOBAL:
         {
             ObjString *name = READ_STRING();
@@ -198,6 +211,7 @@ static InterpretResult run()
         }
         case OP_DEFINE_GLOBAL:
         {
+            // places variable from constants into global table
             ObjString *varName = READ_STRING();
             tableSet(&vm.globals, varName, peek(0));
             pop();

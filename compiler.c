@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -224,10 +225,17 @@ static void beginScope()
     current->scopeDepth++;
 }
 
-// one level shallower
-stati void endScope()
+// discard local variables from locals array
+// todo: optimize with OP_POPN to remove multiple locals
+static void endScope()
 {
     current->scopeDepth--;
+
+    while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth)
+    {
+        emitByte(OP_POP);
+        current->localCount--;
+    }
 }
 
 // function signatures for recursive functions
@@ -238,6 +246,7 @@ static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 // todo: fix, removing this makes a bug
 static uint8_t identifierConstant(Token *name);
+static int resolveLocal(Compiler *compiler, Token *variable);
 
 // handle value op value expressions
 static void binary(bool canAssign)
@@ -333,16 +342,29 @@ static void string(bool canAssign)
 
 static void namedVariable(Token variable, bool canAssign)
 {
-    uint8_t varName = identifierConstant(&variable);
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(current, &variable);
+
+    if (arg != -1)
+    {
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
+    }
+    else
+    {
+        arg = identifierConstant(&variable);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    }
 
     if (canAssign && match(TOKEN_EQUAL))
     {
         expression();
-        emitBytes(OP_SET_GLOBAL, varName);
+        emitBytes(setOp, (uint8_t)arg);
     }
     else
     {
-        emitBytes(OP_GET_GLOBAL, varName);
+        emitBytes(getOp, (uint8_t)arg);
     }
 }
 
@@ -459,16 +481,110 @@ static uint8_t identifierConstant(Token *name)
     return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
+// check if two identifier token names equate
+static bool identifiersEqual(Token *a, Token *b)
+{
+    if (a->length != b->length)
+        return false;
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+// look for local variable
+static int resolveLocal(Compiler *compiler, Token *variable)
+{
+    for (int i = compiler->localCount - 1; i >= 0; i--)
+    {
+        Local *local = &compiler->locals[i];
+
+        if (identifiersEqual(variable, &local->variable))
+        {
+            if (local->depth == -1)
+            {
+                error("Can't read local variable in initializer");
+            }
+
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+// define a local variable to point to a token
+static void addLocal(Token name)
+{
+    // todo: change this? its not a bad
+    if (current->localCount == UINT8_COUNT)
+    {
+        error("Too many local variables.");
+        return;
+    }
+
+    Local *local = &current->locals[current->localCount++];
+    local->variable = name;
+    local->depth = -1;
+}
+
+// add a variable to the scope, define its depth, bail if at
+// ground level 0
+static void declareVariable()
+{
+    // variable is a global at level 0
+    if (current->scopeDepth == 0)
+        return;
+
+    // create local variable
+    Token *currVar = &parser.previous;
+    addLocal(*currVar);
+
+    // todo: refactor to not need -1
+    // todo: faster approach than looping?
+    for (int i = current->localCount - 1; i >= 0; i--)
+    {
+        Local *local = &current->locals[i];
+
+        if (local->depth != -1 && local->depth < current->scopeDepth)
+        {
+            break;
+        }
+
+        if (identifiersEqual(currVar, &local->variable))
+        {
+            error("Variable already defied");
+        }
+    }
+}
+
 // requires next token to be an identifier
 static uint8_t parseVariable(const char *errorMessage)
 {
     consume(TOKEN_IDENTIFIER, errorMessage);
+
+    declareVariable();
+
+    // return dummy index for current scope
+    if (current->scopeDepth > 0)
+        return 0;
+
     return identifierConstant(&parser.previous);
 }
 
+//
+static void markInitialized()
+{
+    current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
 // op instruction to store initial value for the snew variable
+// make/mark variable available for use
 static void defineVariable(uint8_t global)
 {
+    if (current->scopeDepth > 0)
+    {
+        markInitialized();
+        return;
+    }
+
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 

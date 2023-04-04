@@ -21,6 +21,14 @@ static int simpleInstruction(const char *name, int offset)
     return offset + 1;
 }
 
+// print variables?
+static int byteInstruction(const char *variable, Chunk *chunk, int offset)
+{
+    uint8_t slot = chunk->code[offset + 1];
+    printf("%-16s %4d\n", variable, slot);
+    return offset + 2;
+}
+
 // print literal value and name of instruction
 static int constantInstruction(const char *name, Chunk *chunk, int offset)
 {
@@ -57,6 +65,10 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("OP_FALSE", offset);
     case OP_POP:
         return simpleInstruction("OP_POP", offset);
+    case OP_GET_LOCAL:
+        return byteInstruction("OP_GET_LOCAL", chunk, offset);
+    case OP_SET_LOCAL:
+        return byteInstruction("OP_SET_LOCAL", chunk, offset);
     case OP_GET_GLOBAL:
         return constantInstruction("OP_GET_GLOBAL", chunk, offset);
     case OP_DEFINE_GLOBAL:
