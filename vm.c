@@ -315,9 +315,17 @@ static InterpretResult run()
             printlnValue(pop());
             break;
         }
-        case OP_JUMP_IF_FALSE: {
+        case OP_JUMP:
+        {
             uint16_t offset = READ_SHORT();
-            if (isFalsey(peek(0))) vm.ip += offset;
+            vm.ip += offset;
+            break;
+        }
+        case OP_JUMP_IF_FALSE:
+        {
+            uint16_t offset = READ_SHORT();
+            if (isFalsey(peek(0)))
+                vm.ip += offset;
             break;
         }
         // eof, program, function

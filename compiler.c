@@ -172,7 +172,8 @@ static void emitBytes(uint8_t byte1, uint8_t byte2)
 }
 
 // make space for the else clause code, use placeholders
-static int emitJump(uint8_t instruction) {
+static int emitJump(uint8_t instruction)
+{
     emitByte(instruction);
     emitByte(0xff);
     emitByte(0xff);
@@ -208,10 +209,12 @@ static void emitConstant(Value value)
 
 // after making the space, return to where we came from
 // reset the jump offset
-static void patchJump(int offset) {
+static void patchJump(int offset)
+{
     int jump = currentChunk()->count - offset - 2;
 
-    if (jump > UINT16_MAX) {
+    if (jump > UINT16_MAX)
+    {
         error("Too much code to skips. Try breaking this code into functions");
     }
 
@@ -663,16 +666,35 @@ static void expressionStatement()
 }
 
 // compile condition, backpatch for else/then
-static void ifStatement() {
+static void ifStatement()
+{
     // todo: do not parenthesis in code?
     consume(TOKEN_LEFT_PAREN, "Expected ( after if.");
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expected ) after condition.");
 
+    // if ... then move instruction pointer here
+    // but also allocate space in the byte array for that code
     int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
+    // parse the statement
     statement();
 
+    // find place for vm.ip
+    int elseJump = emitJump(OP_JUMP);
+
+    // return
     patchJump(thenJump);
+    emitByte(OP_POP);
+
+    // there's a statement in the else clause
+    // expressions are statements in blue
+    if (match(TOKEN_ELSE))
+        statement();
+
+    // return
+    patchJump(elseJump);
 }
 
 // make op code to print user's values
@@ -736,7 +758,8 @@ static void statement()
     {
         printStatement();
     }
-    else if (match(TOKEN_IF)) {
+    else if (match(TOKEN_IF))
+    {
         ifStatement();
     }
     else if (match(TOKEN_LEFT_BRACE))
