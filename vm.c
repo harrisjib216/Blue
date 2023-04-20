@@ -112,6 +112,10 @@ static InterpretResult run()
 // get literal value
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 
+// read from the padded space in the chunk/bytecode
+#define READ_SHORT() \
+    (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8 | vm.ip[-1])))
+
 // get string value
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 
@@ -311,6 +315,11 @@ static InterpretResult run()
             printlnValue(pop());
             break;
         }
+        case OP_JUMP_IF_FALSE: {
+            uint16_t offset = READ_SHORT();
+            if (isFalsey(peek(0))) vm.ip += offset;
+            break;
+        }
         // eof, program, function
         case OP_RETURN:
         {
@@ -320,6 +329,7 @@ static InterpretResult run()
     }
 
 #undef READ_BYTE
+#undef READ_SHORT
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP
