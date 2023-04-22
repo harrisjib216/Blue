@@ -558,7 +558,7 @@ static void declareVariable()
 
         if (identifiersEqual(currVar, &local->variable))
         {
-            error("Variable already defied");
+            error("Variable already defined");
         }
     }
 }
@@ -703,6 +703,73 @@ static void expressionStatement()
     emitByte(OP_POP);
 }
 
+// c style for loops
+static void forStatement()
+{
+    // define a scope for this for loop to have local variables
+    beginScope();
+
+    // consume first statement, that inits a variable
+    consume(TOKEN_LEFT_PAREN, "Expected ( after for");
+    if (match(TOKEN_SEMICOLON))
+    {
+        // no initializer
+    }
+    else if (match(TOKEN_VAR))
+    {
+        // create variable
+        variableDeclaration();
+    }
+    else
+    {
+        // parse function
+        expressionStatement();
+    }
+
+    // condition statement
+    int loopStart = currentChunk()->count;
+    int exitJump = -1;
+    if (!match(TOKEN_SEMICOLON))
+    {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expected ; in loop condition");
+
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP);
+    }
+
+    consume(TOKEN_SEMICOLON, "Expected ;");
+    consume(TOKEN_RIGHT_PAREN, "Expected ) to close the for clause");
+
+    // increment statement
+    if (!match(TOKEN_RIGHT_PAREN))
+    {
+        int codeJump = emitJump(OP_JUMP);
+        int incrementStart = currentChunk()->count;
+        expression();
+        emitByte(OP_POP);
+        consume(TOKEN_RIGHT_PAREN, "Expected ) to close the for clause");
+
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(codeJump);
+    }
+
+    // code in the for loop
+    statement();
+    emitLoop(loopStart);
+
+    // patch the jump, remove conditional clause
+    if (exitJump != -1)
+    {
+        patchJump(exitJump);
+        emitByte(OP_POP);
+    }
+
+    // exit loop
+    endScope();
+}
+
 // compile condition, backpatch for else/then
 static void ifStatement()
 {
@@ -823,6 +890,10 @@ static void statement()
     else if (match(TOKEN_IF))
     {
         ifStatement();
+    }
+    else if (match(TOKEN_FOR))
+    {
+        forStatement();
     }
     else if (match(TOKEN_WHILE))
     {
