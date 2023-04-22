@@ -229,7 +229,7 @@ static void patchJump(int offset)
 
     if (jump > UINT16_MAX)
     {
-        error("Too much code to skips. Try breaking this code into functions");
+        error("Too much code to skip. Try breaking this code into functions");
     }
 
     currentChunk()->code[offset] = (jump >> 8) & 0xff;
@@ -322,6 +322,9 @@ static void binary(bool canAssign)
         break;
     case TOKEN_STAR:
         emitByte(OP_MULTIPLY);
+        break;
+    case TOKEN_CARET:
+        emitByte(OP_EXPONENT);
         break;
     case TOKEN_SLASH:
         emitByte(OP_DIVIDE);
@@ -619,6 +622,7 @@ ParseRule rules[] = {
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
+    [TOKEN_CARET] = {NULL, binary, PREC_FACTOR},
     [TOKEN_BANG] = {unary, NULL, PREC_NONE},
     [TOKEN_BANG_EQUAL] = {NULL, binary, PREC_EQUALITY},
     [TOKEN_EQUAL] = {NULL, NULL, PREC_NONE},

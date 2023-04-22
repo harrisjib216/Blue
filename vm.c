@@ -6,6 +6,7 @@
 #include "compiler.h"
 #include "debug.h"
 #include "object.h"
+#include "math.h"
 #include "memory.h"
 #include "vm.h"
 
@@ -125,17 +126,17 @@ static InterpretResult run()
 // task: both values in the stack are numbers and can produce a binary op
 // otherwise, eject with runtime error. the wrapper or macro to use is
 // the valueType prop
-#define BINARY_OP(valueType, op)                                 \
-    do                                                           \
-    {                                                            \
-        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1)))          \
-        {                                                        \
-            runtimeError("Values or operands must be numbers."); \
-            return INTERPRET_RUNTIME_ERROR;                      \
-        }                                                        \
-        double b = AS_NUMBER(pop());                             \
-        double a = AS_NUMBER(pop());                             \
-        push(valueType(a op b));                                 \
+#define BINARY_OP(valueType, op)                        \
+    do                                                  \
+    {                                                   \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) \
+        {                                               \
+            runtimeError("Values must be numbers.");    \
+            return INTERPRET_RUNTIME_ERROR;             \
+        }                                               \
+        double b = AS_NUMBER(pop());                    \
+        double a = AS_NUMBER(pop());                    \
+        push(valueType(a op b));                        \
     } while (false)
 
     // check which instruction to execute
@@ -287,6 +288,22 @@ static InterpretResult run()
         case OP_DIVIDE:
         {
             BINARY_OP(NUMBER_VAL, /);
+            break;
+        }
+        case OP_EXPONENT:
+        {
+            if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1)))
+            {
+                double b = AS_NUMBER(pop());
+                double a = AS_NUMBER(pop());
+                push(NUMBER_VAL(pow(a, b)));
+            }
+            else
+            {
+                runtimeError("Values must be numbers.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+
             break;
         }
         // urnary ops
