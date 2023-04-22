@@ -229,7 +229,7 @@ static void patchJump(int offset)
 
     if (jump > UINT16_MAX)
     {
-        error("Too much code to skip. Try breaking this code into functions");
+        error("This code body is too large. Try breaking this code into functions");
     }
 
     currentChunk()->code[offset] = (jump >> 8) & 0xff;
@@ -800,7 +800,9 @@ static void ifStatement()
     // there's a statement in the else clause
     // expressions are statements in blue
     if (match(TOKEN_ELSE))
+    {
         statement();
+    }
 
     // return
     patchJump(elseJump);
