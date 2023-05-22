@@ -2,18 +2,22 @@
 #define blue_object_h
 
 #include "common.h"
+#include "chunk.h"
 #include "value.h"
 
 #define OBJ_TYPE(item) (AS_OBJ(item)->type)
 
+#define IS_FUNCTION(item) isObjType(item, OBJ_FUNCTION)
 #define IS_STRING(item) isObjType(item, OBJ_STRING)
 
+#define AS_FUNCTION(item) ((ObjFunction *)AS_OBJ(item))
 #define AS_STRING(item) ((ObjString *)AS_OBJ(item))
 #define AS_CSTRING(item) (((ObjString *)AS_OBJ(value))->chars)
 
 // types of objects for blue
 typedef enum
 {
+    OBJ_FUNCTION,
     OBJ_STRING,
 } ObjType;
 
@@ -27,6 +31,19 @@ struct Obj
     struct Obj *next;
 };
 
+//
+typedef struct
+{
+    // share obj type
+    Obj obj;
+    // number of function parameters
+    int arity;
+    // code in the function
+    Chunk chunk;
+    // function name
+    ObjString *name;
+} ObjFunction;
+
 // extends obj and adds string properties
 struct ObjString
 {
@@ -35,6 +52,9 @@ struct ObjString
     char *chars;
     uint32_t hash;
 };
+
+// c function to declare byte code function
+ObjFunction *newFunction();
 
 // passes ownership of string by making a copy
 ObjString *takeString(char *chars, int length);

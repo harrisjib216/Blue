@@ -25,6 +25,16 @@ static Obj *allocateObject(size_t size, ObjType type)
     return object;
 }
 
+// request heap space for this function
+ObjFunction *newFunction()
+{
+    ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+    function->arity = 0;
+    function->name = NULL;
+    initChunk(&function->chunk);
+    return function;
+}
+
 // uses FNV-1a hash function
 static uint32_t hashString(const char *key, int length)
 {
@@ -86,11 +96,21 @@ ObjString *copyString(const char *chars, int length)
     return allocateString(heapString, length, hash);
 }
 
+// allow blue lang to print functions
+// todo: print arguments it expects?
+static void printFunction(ObjFunction *function)
+{
+    printf("<func %s>", function->name->chars);
+}
+
 // handle different objects
 void printObject(Value value)
 {
     switch (OBJ_TYPE(value))
     {
+    case OBJ_FUNCTION:
+        printFunction(AS_FUNCTION(value));
+        break;
     case OBJ_STRING:
         printf("%s", AS_CSTRING(value));
         break;

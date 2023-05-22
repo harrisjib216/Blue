@@ -35,22 +35,35 @@ typedef enum
 
 typedef void (*ParseFn)(bool canAssign);
 
+// rules of which to parse first
 typedef struct
 {
-    // typedef for function w/o args and return value
     ParseFn prefix;
     ParseFn infix;
     Precedence precedence;
 } ParseRule;
 
+// local variables, scope = depth
 typedef struct
 {
     Token variable;
     int depth;
 } Local;
 
+// determines if compiling top leve or body level
+// all the code in compiled into some function: main or user defined
+typedef enum
+{
+    TYPE_FUNCTION,
+    TYPE_SCRIPT
+} FunctionType;
+
 typedef struct
 {
+    // the func currently being compiled
+    ObjFunction *function;
+    FunctionType type;
+
     Local locals[UINT8_COUNT];
     int localCount;
     int scopeDepth;
@@ -60,10 +73,10 @@ Parser parser;
 Compiler *current = NULL;
 Chunk *compilingChunk;
 
-// get chunk we are compiling
+// the chunk of the function we're compiling: main or user def.
 static Chunk *currentChunk()
 {
-    return compilingChunk;
+    return &current->function->chunk;
 }
 
 // print where the error occurred and its message
