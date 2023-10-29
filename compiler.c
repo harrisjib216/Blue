@@ -250,24 +250,36 @@ static void patchJump(int offset)
 }
 
 // todo: document
-static void initCompiler(Compiler *compiler)
+static void initCompiler(Compiler *compiler, FunctionType type)
 {
+    compiler->function = NULL;
+    compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
+    compiler->function = newFunction();
     current = compiler;
+
+    Local *local = &current->locals[current->localCount++];
+    local->depth = 0;
+    local->name.start = "";
+    local->name.length = 0;
 }
 
 // add return and debug
-static void endCompiler()
+static ObjFunction *endCompiler()
 {
     emitReturn();
+
+    ObjFunction *function = current->function;
 
 #ifdef DEBUG_PRINT_CODE
     if (!parser.hadError)
     {
-        disassembleChunk(currentChunk(), "code");
+        disassembleChunk(currentChunk(), function->name != NULL ? function->name->chars : "<script>");
     }
 #endif
+
+    return function;
 }
 
 // one level deeper
@@ -985,14 +997,14 @@ static void statement()
 }
 
 // compilation was successful if no error appeared
-bool compile(const char *source, Chunk *chunk)
+ObjFunction *compile(const char *source)
 {
     // make a scanner to generate tokens from code
     initScanner(source);
 
     // todo: document
     Compiler compiler;
-    initCompiler(&compiler);
+    initCompiler(&compiler, TYPE_SCRIPT);
 
     // init chunk to compile
     compilingChunk = chunk;
@@ -1011,7 +1023,6 @@ bool compile(const char *source, Chunk *chunk)
     }
 
     // finished compiling chunk
-    endCompiler();
-
-    return !parser.hadError;
+    ObjFunction *function = endCompiler();
+    return !parser.hadError ? NULL : function;
 }
