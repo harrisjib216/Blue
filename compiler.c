@@ -58,8 +58,10 @@ typedef enum
     TYPE_SCRIPT
 } FunctionType;
 
-typedef struct
+typedef struct Compiler
 {
+    struct Compiler *enclosing;
+
     // the func currently being compiled
     ObjFunction *function;
     FunctionType type;
@@ -252,12 +254,19 @@ static void patchJump(int offset)
 // todo: document
 static void initCompiler(Compiler *compiler, FunctionType type)
 {
+    compiler->enclosing = current;
     compiler->function = NULL;
     compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
     compiler->function = newFunction();
     current = compiler;
+
+    if (type != TYPE_SCRIPT)
+    {
+        current->function->name = copyString(
+            parser.previous.start, parser.previous.length);
+    }
 
     Local *local = &current->locals[current->localCount++];
     local->depth = 0;
@@ -279,6 +288,7 @@ static ObjFunction *endCompiler()
     }
 #endif
 
+    current = current->enclosing;
     return function;
 }
 
@@ -606,9 +616,12 @@ static uint8_t parseVariable(const char *errorMessage)
     return identifierConstant(&parser.previous);
 }
 
-//
+// mark variable or function as initalized
 static void markInitialized()
 {
+    if (current->scopeDepth == 0)
+        return;
+
     current->locals[current->localCount - 1].depth = current->scopeDepth;
 }
 
@@ -703,12 +716,48 @@ static void block()
     consume(TOKEN_RIGHT_BRACE, "Expected closing brace: }");
 }
 
+// attaches code into a function
+static void function(FunctionType type)
+{
+    Compiler compiler;
+    initCompiler(&compiler, type);
+    beginScope();
+
+    consume(TOKEN_LEFT_PAREN, "Expected '(' after function name.");
+
+    // parse parameters
+    if (!check(TOKEN_RIGHT_PAREN))
+    {
+        do
+        {
+            current->function->arity++;
+            if (current->function->arity > 255)
+            {
+                errorAtCurrent("Can't have more than 255 parameters");
+            }
+
+            uint8_t constant = parseVariable("Expected parameter name.");
+            defineVariable(constant);
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after function parameters.");
+
+    // new scope for functions block of code
+    consume(TOKEN_LEFT_BRACE, "Expected '{' before function body.");
+
+    // compiles rest of code and closing brace
+    block();
+
+    ObjFunction *function = endCompiler();
+    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+}
+
 // create & store user func in variable
 static void funcDeclaration()
 {
     uint8_t global = parseVariable("Expected a function name.");
     markInitialized();
-    funcDeclaration(TYPE_FUNCTION);
+    function(TYPE_FUNCTION);
     defineVariable(global);
 }
 
