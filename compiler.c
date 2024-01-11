@@ -703,6 +703,15 @@ static void block()
     consume(TOKEN_RIGHT_BRACE, "Expected closing brace: }");
 }
 
+// create & store user func in variable
+static void funcDeclaration()
+{
+    uint8_t global = parseVariable("Expected a function name.");
+    markInitialized();
+    funcDeclaration(TYPE_FUNCTION);
+    defineVariable(global);
+}
+
 // get variable name and value, default to nil if value isn't present
 static void variableDeclaration()
 {
@@ -951,7 +960,11 @@ static void synchronize()
 // supports variables or statements
 static void declaration()
 {
-    if (match(TOKEN_VAR))
+    if (match(TOKEN_FUNC))
+    {
+        funcDeclaration();
+    }
+    else if (match(TOKEN_VAR))
     {
         variableDeclaration();
     }
@@ -1005,9 +1018,6 @@ ObjFunction *compile(const char *source)
     // todo: document
     Compiler compiler;
     initCompiler(&compiler, TYPE_SCRIPT);
-
-    // init chunk to compile
-    // compilingChunk = chunk;
 
     // initialize parser errors to false
     parser.hadError = false;
