@@ -261,8 +261,8 @@ static void initCompiler(Compiler *compiler, FunctionType type)
 
     Local *local = &current->locals[current->localCount++];
     local->depth = 0;
-    local->name.start = "";
-    local->name.length = 0;
+    local->variable.start = "";
+    local->variable.length = 0;
 }
 
 // add return and debug
@@ -1007,7 +1007,7 @@ ObjFunction *compile(const char *source)
     initCompiler(&compiler, TYPE_SCRIPT);
 
     // init chunk to compile
-    compilingChunk = chunk;
+    // compilingChunk = chunk;
 
     // initialize parser errors to false
     parser.hadError = false;

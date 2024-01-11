@@ -16,6 +16,7 @@ VM vm;
 static void resetStack()
 {
     vm.stackTop = vm.stack;
+    vm.frameCount = 0;
 }
 
 // todo: document
@@ -27,9 +28,9 @@ static void runtimeError(const char *format, ...)
     va_end(args);
     fputs("\n", stderr);
 
-    size_t instruction = vm.ip - vm.chunk->code - 1;
-
-    int line = vm.chunk->lines[instruction];
+    CallFrame *frame = &vm.frames[vm.frameCount - 1];
+    size_t instruction = frame->ip - frame->function->chunk.code - 1;
+    int line = frame->function->chunk.lines[instruction];
     fprintf(stderr, "[line %d] in script.\n", line);
 
     resetStack();
@@ -107,15 +108,19 @@ static void concatenate()
 // START OF THE RUN PROGRAM
 static InterpretResult run()
 {
-// return pointer
-#define READ_BYTE() (*vm.ip++)
+    CallFrame *frame = &vm.frames[vm.frameCount - 1];
 
-// get literal value
-#define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+// return pointer
+#define READ_BYTE() (*frame->ip++)
 
 // read from the padded space in the chunk/bytecode
 #define READ_SHORT() \
-    (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8 | vm.ip[-1])))
+    (frame->ip += 2, \
+     (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+
+// get literal value
+#define READ_CONSTANT() \
+    (frame->function->chunk.constants.values[READ_BYTE()])
 
 // get string value
 #define READ_STRING() AS_STRING(READ_CONSTANT())
@@ -150,7 +155,9 @@ static InterpretResult run()
         printStack(vm.stack, vm.stackTop);
 
         // print instruction with data
-        disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
+        disassembleInstruction(
+            &frame->function->chunk,
+            (int)(frame->ip - frame->function->chunk.code));
 #endif
 
         uint8_t instruction;
@@ -191,13 +198,13 @@ static InterpretResult run()
         {
             // push local value to give O(1) read time
             uint8_t slot = READ_BYTE();
-            push(vm.stack[slot]);
+            push(frame->slots[slot]);
             break;
         }
         case OP_SET_LOCAL:
         {
             uint8_t slot = READ_BYTE();
-            vm.stack[slot] = peek(0);
+            frame->slots[slot] = peek(0);
             break;
         }
         case OP_GET_GLOBAL:
@@ -335,20 +342,20 @@ static InterpretResult run()
         case OP_JUMP:
         {
             uint16_t offset = READ_SHORT();
-            vm.ip += offset;
+            frame->ip += offset;
             break;
         }
         case OP_JUMP_IF_FALSE:
         {
             uint16_t offset = READ_SHORT();
             if (isFalsey(peek(0)))
-                vm.ip += offset;
+                frame->ip += offset;
             break;
         }
         case OP_LOOP:
         {
             uint16_t offset = READ_SHORT();
-            vm.ip -= offset;
+            frame->ip -= offset;
             break;
         }
         // eof, program, function
@@ -369,23 +376,20 @@ static InterpretResult run()
 // compile source to byte code
 InterpretResult interpret(const char *source)
 {
-    // make code chunk
-    Chunk chunk;
-    initChunk(&chunk);
+    // compile source code, get top level code/function
+    ObjFunction *function = compile(source);
 
-    // handle compilation errors
-    if (!compile(source, &chunk))
-    {
-        freeChunk(&chunk);
+    // if null, there was a compile time error and we
+    // dont have a starting place for the code
+    if (function == NULL)
         return INTERPRET_COMPILE_ERROR;
-    }
 
-    // pass chunk to vm
-    vm.chunk = &chunk;
-    vm.ip = vm.chunk->code;
+    push(OBJ_VAL(function));
+    CallFrame *frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->ip = function->chunk.code;
+    frame->slots = vm.stack;
 
     // run code
-    InterpretResult result = run();
-    freeChunk(&chunk);
-    return result;
+    return run();
 }
