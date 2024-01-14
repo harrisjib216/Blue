@@ -369,6 +369,13 @@ static void binary(bool canAssign)
     }
 }
 
+// todo: document
+static void call(bool canAssign)
+{
+    uint8_t argCount = argumentList();
+    emitBytes(OP_CALL, argCount);
+}
+
 // handle nil and boolean keywords in pratt parser table
 static void literal(bool canAssign)
 {
@@ -638,6 +645,28 @@ static void defineVariable(uint8_t global)
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+// compile args while present, return number of them
+static uint8_t argumentList()
+{
+    uint8_t argCount = 0;
+
+    if (!check(TOKEN_RIGHT_PAREN))
+    {
+        do
+        {
+            expression();
+            if (argCount == 255)
+            {
+                error("Can't have more than 255 arguments.");
+            }
+            argCount++;
+        } while (match(TOKEN_COMMA));
+    }
+
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments.");
+    return argCount;
+}
+
 // short circuit and
 static void and_(bool canAssign)
 {
@@ -650,7 +679,7 @@ static void and_(bool canAssign)
 }
 
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
+    [TOKEN_LEFT_PAREN] = {grouping, call, PREC_NONE},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},

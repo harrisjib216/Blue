@@ -28,6 +28,26 @@ static void runtimeError(const char *format, ...)
     va_end(args);
     fputs("\n", stderr);
 
+    // print stack trace
+    for (int i = vm.frameCount - 1; i > -1; i--)
+    {
+        CallFrame *frame = &vm.frames[i];
+        ObjFunction *function = frame->function;
+
+        size_t instruction = frame->ip - function->chunk.code - 1;
+
+        fprintf(stderr, "[Line %d] in ", function->chunk.lines[instruction]);
+
+        if (function->name == NULL)
+        {
+            fprintf(stderr, "script\n");
+        }
+        else
+        {
+            fprintf(stderr, "%s()\n", function->name->chars);
+        }
+    }
+
     CallFrame *frame = &vm.frames[vm.frameCount - 1];
     size_t instruction = frame->ip - frame->function->chunk.code - 1;
     int line = frame->function->chunk.lines[instruction];
@@ -75,6 +95,47 @@ Value pop()
 static Value peek(int distance)
 {
     return vm.stackTop[-1 - distance];
+}
+
+// just "called" a function in the interpreter, so grow the stack
+static bool call(ObjFunction *function, int argCount)
+{
+    if (argCount != function->arity)
+    {
+        runtimeError("Expected %d arguments but go %d.", function->arity, argCount);
+        return false;
+    }
+
+    if (vm.frameCount == FRAMES_MAX)
+    {
+        runtimeError("Call stack is too large (Stack overflow..)");
+        return false;
+    }
+
+    CallFrame *frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->ip = function->chunk.code;
+    frame->slots = vm.stackTop - argCount - 1;
+    return true;
+}
+
+// errors if not a function?
+static bool callValue(Value callee, int argCount)
+{
+    if (IS_OBJ(callee))
+    {
+        switch (OBJ_TYPE(callee))
+        {
+        case OBJ_FUNCTION:
+            return call(AS_FUNCTION(callee), argCount);
+        default:
+            // non-callable object type
+            break;
+        }
+    }
+
+    runtimeError("You can only call functions and classes.");
+    return false;
 }
 
 // todo: define what our language considers falsey
@@ -240,7 +301,7 @@ static InterpretResult run()
                 runtimeError("Undefined variable: %s", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
-
+            frame = &vm.frames[vm.frameCount - 1];
             break;
         }
         // logical, comparison
@@ -358,6 +419,15 @@ static InterpretResult run()
             frame->ip -= offset;
             break;
         }
+        case OP_CALL:
+        {
+            int argCount = READ_BYTE();
+            if (!callValue(peek(argCount), argCount))
+            {
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            break;
+        }
         // eof, program, function
         case OP_RETURN:
         {
@@ -384,11 +454,8 @@ InterpretResult interpret(const char *source)
     if (function == NULL)
         return INTERPRET_COMPILE_ERROR;
 
-    push(OBJ_VAL(function));
-    CallFrame *frame = &vm.frames[vm.frameCount++];
-    frame->function = function;
-    frame->ip = function->chunk.code;
-    frame->slots = vm.stack;
+    // begin executing
+    call(function, 0);
 
     // run code
     return run();
