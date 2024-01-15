@@ -35,6 +35,14 @@ ObjFunction *newFunction()
     return function;
 }
 
+// native C functions, callable in Blue
+ObjNative *newNative(NativeFunc function)
+{
+    ObjNative *native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
+}
+
 // uses FNV-1a hash function
 static uint32_t hashString(const char *key, int length)
 {
@@ -116,6 +124,9 @@ void printObject(Value value)
     {
     case OBJ_FUNCTION:
         printFunction(AS_FUNCTION(value));
+        break;
+    case OBJ_NATIVE:
+        printf("<native fn>");
         break;
     case OBJ_STRING:
         printf("%s", AS_CSTRING(value));

@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -11,6 +12,12 @@
 #include "vm.h"
 
 VM vm;
+
+// native functions
+static Value clockNative(int argCount, Value *args)
+{
+    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
 
 // config: point stackTop to the beginning
 static void resetStack()
@@ -56,6 +63,16 @@ static void runtimeError(const char *format, ...)
     resetStack();
 }
 
+// push a native function onto the stack
+static void defineNative(const char *name, NativeFunc function)
+{
+    push(OBJ_VAL(copyString(name, (int)strlen(name))));
+    push(OBJ_VAL(newNative(function)));
+    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+    pop();
+    pop();
+}
+
 // set up vm
 void initVM()
 {
@@ -63,6 +80,9 @@ void initVM()
     vm.objects = NULL;
     initTable(&vm.globals);
     initTable(&vm.strings);
+
+    // define more native funcs
+    defineNative("clock", clockNative);
 }
 
 // clear vm
@@ -128,6 +148,14 @@ static bool callValue(Value callee, int argCount)
         {
         case OBJ_FUNCTION:
             return call(AS_FUNCTION(callee), argCount);
+        case OBJ_NATIVE:
+        {
+            NativeFunc native = AS_NATIVE(callee);
+            Value result = native(argCount, vm.stackTop - argCount);
+            vm.stackTop -= argCount + 1;
+            push(result);
+            return true;
+        }
         default:
             // non-callable object type
             break;
@@ -431,7 +459,19 @@ static InterpretResult run()
         // eof, program, function
         case OP_RETURN:
         {
-            return INTERPRET_OK;
+            Value value = pop();
+            vm.frameCount--;
+
+            if (vm.frameCount == 0)
+            {
+                pop();
+                return INTERPRET_OK;
+            }
+
+            vm.stackTop = frame->slots;
+            push(value);
+            frame = &vm.frames[vm.frameCount - 1];
+            break;
         }
         }
     }

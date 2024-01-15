@@ -8,9 +8,12 @@
 #define OBJ_TYPE(item) (AS_OBJ(item)->type)
 
 #define IS_FUNCTION(item) isObjType(item, OBJ_FUNCTION)
+#define IS_NATIVE(item) isObjType(item, OBJ_NATIVE);
 #define IS_STRING(item) isObjType(item, OBJ_STRING)
 
 #define AS_FUNCTION(item) ((ObjFunction *)AS_OBJ(item))
+#define AS_NATIVE(item) \
+    (((ObjNative *)AS_OBJ(item))->function)
 #define AS_STRING(item) ((ObjString *)AS_OBJ(item))
 #define AS_CSTRING(item) (((ObjString *)AS_OBJ(value))->chars)
 
@@ -18,6 +21,7 @@
 typedef enum
 {
     OBJ_FUNCTION,
+    OBJ_NATIVE,
     OBJ_STRING,
 } ObjType;
 
@@ -31,7 +35,7 @@ struct Obj
     struct Obj *next;
 };
 
-//
+// code chunk representation of a Blue function
 typedef struct
 {
     // share obj type
@@ -44,6 +48,15 @@ typedef struct
     ObjString *name;
 } ObjFunction;
 
+// native C functions, callable in Blue
+typedef Value (*NativeFunc)(int argCount, Value *args);
+
+typedef struct
+{
+    Obj obj;
+    NativeFunc function;
+} ObjNative;
+
 // extends obj and adds string properties
 struct ObjString
 {
@@ -55,6 +68,9 @@ struct ObjString
 
 // c function to declare byte code function
 ObjFunction *newFunction();
+
+// native C functions, callable in Blue
+ObjNative *newNative(NativeFunc function);
 
 // passes ownership of string by making a copy
 ObjString *takeString(char *chars, int length);

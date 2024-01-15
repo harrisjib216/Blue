@@ -212,6 +212,7 @@ static int emitJump(uint8_t instruction)
 // temporary: print expression value
 static void emitReturn()
 {
+    emitByte(OP_NIL);
     emitByte(OP_RETURN);
 }
 
@@ -320,6 +321,7 @@ static void parsePrecedence(Precedence precedence);
 // todo: fix, removing this makes a bug
 static uint8_t identifierConstant(Token *name);
 static int resolveLocal(Compiler *compiler, Token *variable);
+static uint8_t argumentList();
 
 // handle value op value expressions
 static void binary(bool canAssign)
@@ -679,7 +681,7 @@ static void and_(bool canAssign)
 }
 
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN] = {grouping, call, PREC_NONE},
+    [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
@@ -816,7 +818,7 @@ static void expressionStatement()
 {
     expression();
     // todo: remove
-    consume(TOKEN_SEMICOLON, "Expected ';'");
+    // consume(TOKEN_SEMICOLON, "Expected ';'");
     emitByte(OP_POP);
 }
 
@@ -978,9 +980,30 @@ static void ifStatement()
 static void printStatement()
 {
     expression();
-    // todo: remove
-    consume(TOKEN_SEMICOLON, "Expected ';'");
+    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_PRINT);
+}
+
+// places the returned value (value or nil) onto the stack
+// along with return bytecode
+static void returnStatement()
+{
+    if (current->type == TYPE_SCRIPT)
+    {
+        error("Cannot return from top-level code.");
+    }
+
+    if (match(TOKEN_SEMICOLON))
+    {
+        // return nothing
+        emitReturn();
+    }
+    else
+    {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expected a ';' after return value");
+        emitByte(OP_RETURN);
+    }
 }
 
 // while loop
@@ -988,7 +1011,6 @@ static void whileStatement()
 {
     int loopStart = currentChunk()->count;
 
-    // todo: remove?
     // evaluate condition
     consume(TOKEN_LEFT_PAREN, "Expected ( after while.");
     expression();
@@ -1063,13 +1085,17 @@ static void statement()
     {
         printStatement();
     }
+    else if (match(TOKEN_FOR))
+    {
+        forStatement();
+    }
     else if (match(TOKEN_IF))
     {
         ifStatement();
     }
-    else if (match(TOKEN_FOR))
+    else if (match(TOKEN_RETURN))
     {
-        forStatement();
+        returnStatement();
     }
     else if (match(TOKEN_WHILE))
     {
@@ -1092,8 +1118,6 @@ ObjFunction *compile(const char *source)
 {
     // make a scanner to generate tokens from code
     initScanner(source);
-
-    // todo: document
     Compiler compiler;
     initCompiler(&compiler, TYPE_SCRIPT);
 
