@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -17,6 +18,41 @@ VM vm;
 static Value clockNative(int argCount, Value *args)
 {
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
+// prints the contents of file
+static Value printFileNative(int argCount, Value *args)
+{
+    char buf[1024];
+    FILE *file;
+    size_t nread;
+
+    file = fopen(AS_CSTRING(args[0]), "r");
+    if (file)
+    {
+        // print contnets 'sizeof buffer' bytes at a time
+        while ((nread = fread(buf, 1, sizeof buf, file)) > 0)
+        {
+            fwrite(buf, 1, nread, stdout);
+        }
+
+        // deal with error
+        if (ferror(file))
+        {
+            printf("Error printing: %s", AS_CSTRING(args[0]));
+        }
+
+        fclose(file);
+    }
+    else
+    {
+        // file does not exist
+        fclose(file);
+        printf("Error file does not exist: %s", AS_CSTRING(args[0]));
+        exit(1);
+    }
+
+    return NUMBER_VAL(100);
 }
 
 // config: point stackTop to the beginning
@@ -83,6 +119,7 @@ void initVM()
 
     // define more native funcs
     defineNative("clock", clockNative);
+    defineNative("printFile", printFileNative);
 }
 
 // clear vm

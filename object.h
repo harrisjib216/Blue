@@ -15,7 +15,7 @@
 #define AS_NATIVE(item) \
     (((ObjNative *)AS_OBJ(item))->function)
 #define AS_STRING(item) ((ObjString *)AS_OBJ(item))
-#define AS_CSTRING(item) (((ObjString *)AS_OBJ(value))->chars)
+#define AS_CSTRING(item) (((ObjString *)AS_OBJ(item))->chars)
 
 // types of objects for blue
 typedef enum
